@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompanyDB — Submit</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>New Entry</h1>
+        <p>Submit data, files, links, or notes to the vault</p>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="card" style="max-width:680px;">
+        <form id="submitForm" enctype="multipart/form-data">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="department_name">Department</label>
+              <select class="form-control" id="department_name" name="department_name" required>
+                <option value="" disabled selected>Select department…</option>
+                <option>Engineering</option>
+                <option>Marketing</option>
+                <option>Sales</option>
+                <option>HR</option>
+                <option>Design</option>
+                <option>Operations</option>
+                <option>Finance</option>
+                <option>Management</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="content_type">Content Type</label>
+              <select class="form-control" id="content_type" name="content_type" required>
+                <option value="" disabled selected>Select type…</option>
+                <option>Ad</option>
+                <option>Link</option>
+                <option>Note</option>
+                <option>Image</option>
+                <option>Video</option>
+                <option>PDF</option>
+                <option>Code</option>
+                <option>Document</option>
+                <option>Presentation</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="textSection">
+            <label class="form-label" for="data_body">Content</label>
+            <textarea class="form-control" id="data_body" name="data_body"
+                      placeholder="Paste your text, link, ad copy, or code here…" style="min-height:180px;"></textarea>
+            <div class="form-hint">For links, paste the full URL. For code, paste directly — formatting is preserved.</div>
+          </div>
+
+          <!-- File upload zone (shown when type suggests a file) -->
+          <div class="form-group" id="fileSection" style="display:none;">
+            <label class="form-label">Upload File</label>
+            <div class="upload-zone" id="uploadZone">
+              <span class="upload-icon" id="uploadIcon">📎</span>
+              <div class="upload-text">Click to browse or drag & drop</div>
+              <div class="upload-hint" id="uploadHint">Max 100MB · Images, Videos, PDFs, Docs, PPTs, Code…</div>
+              <input type="file" id="fileInput" name="file" />
+            </div>
+            <div class="file-preview" id="filePreview" style="display:none;">
+              <span class="file-icon" id="previewIcon">📄</span>
+              <div class="file-info">
+                <div class="file-name" id="previewName"></div>
+                <div class="file-size" id="previewSize"></div>
+              </div>
+              <span class="file-remove" id="fileRemove" title="Remove file">✕</span>
+            </div>
+            <div class="progress-bar" id="progressBar" style="display:none;">
+              <div class="progress-fill" id="progressFill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div id="submitError" class="form-hint" style="color:var(--danger);display:none;margin-bottom:12px;"></div>
+
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-primary btn-lg" type="submit" id="submitBtn">Submit Entry</button>
+            <a class="btn btn-ghost" href="/vault">View Vault</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/shared.js"></script>
+<script>
+const FILE_TYPES = ['Image','Video','PDF','Code','Document','Presentation','Other'];
+const TYPE_ICONS = { Image:'🖼️', Video:'🎬', PDF:'📕', Code:'💻', Document:'📄', Presentation:'📊', Other:'📦', Ad:'📣', Link:'🔗', Note:'📝' };
+
+const contentTypeEl = document.getElementById('content_type');
+const fileSection   = document.getElementById('fileSection');
+const textSection   = document.getElementById('textSection');
+const uploadZone    = document.getElementById('uploadZone');
+const fileInput     = document.getElementById('fileInput');
+const filePreview   = document.getElementById('filePreview');
+const progressBar   = document.getElementById('progressBar');
+const progressFill  = document.getElementById('progressFill');
+
+contentTypeEl.addEventListener('change', () => {
+  const t = contentTypeEl.value;
+  const isFile = FILE_TYPES.includes(t);
+  fileSection.style.display = isFile ? 'block' : 'none';
+  textSection.style.display = (isFile && t !== 'Code') ? 'none' : 'block';
+  document.getElementById('uploadIcon').textContent = TYPE_ICONS[t] || '📎';
+  if (t === 'Link') document.getElementById('data_body').placeholder = 'https://…';
+  else if (t === 'Code') document.getElementById('data_body').placeholder = '// Paste your code here…';
+  else document.getElementById('data_body').placeholder = 'Paste your content here…';
+});
+
+// Drag & drop
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) showPreview(e.dataTransfer.files[0]); });
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) showPreview(fileInput.files[0]); });
+document.getElementById('fileRemove').addEventListener('click', () => { fileInput.value = ''; filePreview.style.display = 'none'; uploadZone.style.display = 'flex'; });
+
+function showPreview(file) {
+  document.getElementById('previewName').textContent = file.name;
+  document.getElementById('previewSize').textContent = formatBytes(file.size);
+  filePreview.style.display = 'flex';
+  uploadZone.style.display = 'none';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+document.getElementById('submitForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const errEl = document.getElementById('submitError');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+  const fd = new FormData(document.getElementById('submitForm'));
+
+  // XHR for upload progress
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/submissions');
+
+  xhr.upload.addEventListener('progress', (e) => {
+    if (e.lengthComputable) {
+      progressBar.style.display = 'block';
+      progressFill.style.width = Math.round((e.loaded / e.total) * 100) + '%';
+    }
+  });
+
+  xhr.addEventListener('load', () => {
+    progressBar.style.display = 'none';
+    const data = JSON.parse(xhr.responseText);
+    if (data.success) {
+      showToast('Entry submitted successfully!', 'success');
+      document.getElementById('submitForm').reset();
+      filePreview.style.display = 'none';
+      uploadZone.style.display = 'flex';
+      fileSection.style.display = 'none';
+    } else {
+      errEl.textContent = data.error || 'Submission failed';
+      errEl.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Submit Entry';
+  });
+
+  xhr.addEventListener('error', () => {
+    errEl.textContent = 'Network error';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Submit Entry';
+    progressBar.style.display = 'none';
+  });
+
+  xhr.send(fd);
+});
+</script>
+</body>
+</html>

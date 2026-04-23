@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CompanyDB — DB Health</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>DB Health</h1>
+        <p>Live diagnostics for your AWS RDS instance and server</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="refreshBtn">↻ Refresh</button>
+    </div>
+
+    <div class="page-content">
+      <div id="healthContent"><div style="text-align:center;padding:60px;color:var(--text3);">Loading diagnostics…</div></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="/js/shared.js"></script>
+<script>
+async function loadHealth() {
+  try {
+    const res  = await fetch('/api/health');
+    const data = await res.json();
+    if (data.error) { document.getElementById('healthContent').innerHTML = `<div class="card"><p style="color:var(--danger);">Error: ${data.error}</p></div>`; return; }
+    renderHealth(data);
+  } catch(e) {
+    document.getElementById('healthContent').innerHTML = `<div class="card"><p style="color:var(--danger);">Could not reach server</p></div>`;
+  }
+}
+
+function renderHealth(d) {
+  const { server, db, storage } = d;
+  const memUsed = server.memTotal - server.memFree;
+  const memPct  = Math.round((memUsed / server.memTotal) * 100);
+  const uptimeStr = formatUptime(server.uptime);
+
+  document.getElementById('healthContent').innerHTML = `
+    <!-- Top Stats -->
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Submissions</div><div class="stat-value accent">${db.submissionsTotal}</div></div>
+      <div class="stat-card"><div class="stat-label">Team Accounts</div><div class="stat-value success">${db.usersTotal}</div></div>
+      <div class="stat-card"><div class="stat-label">DB Size (RDS)</div><div class="stat-value">${db.size}</div></div>
+      <div class="stat-card"><div class="stat-label">Active DB Connections</div><div class="stat-value ${db.activeConnections > 15 ? 'danger' : 'success'}">${db.activeConnections}</div></div>
+    </div>
+
+    <!-- S3 Storage Meter -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🗂️ File Storage (S3)</div>
+          <div class="card-subtitle">${storage.objectCount} files · ${storage.usedMB} MB used of ${storage.freeGB} GB free tier</div>
+        </div>
+        <div style="font-size:1.4rem;font-weight:700;color:${parseFloat(storage.usedPct)>80?'var(--danger)':parseFloat(storage.usedPct)>50?'var(--warn)':'var(--success)'}">
+          ${storage.usedPct}%
+        </div>
+      </div>
+      <div class="progress-bar" style="height:8px;">
+        <div class="progress-fill" style="width:${storage.usedPct}%;background:${parseFloat(storage.usedPct)>80?'var(--danger)':parseFloat(storage.usedPct)>50?'var(--warn)':'var(--accent)'}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;">
+        <span style="font-size:.72rem;color:var(--text3);">${storage.usedMB} MB used</span>
+        <span style="font-size:.72rem;color:var(--text3);">${storage.freeGB} GB free tier limit</span>
+      </div>
+      ${storage.error ? `<div style="color:var(--danger);font-size:.75rem;margin-top:8px;">⚠ S3 error: ${storage.error}</div>` : ''}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+      <!-- Server info -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚙️ Server</div></div>
+        <div class="metric-row"><span class="metric-key">Node.js</span><span class="metric-val">${server.nodeVersion}</span></div>
+        <div class="metric-row"><span class="metric-key">Platform</span><span class="metric-val">${server.platform} (${server.arch})</span></div>
+        <div class="metric-row"><span class="metric-key">Uptime</span><span class="metric-val">${uptimeStr}</span></div>
+        <div class="metric-row"><span class="metric-key">RAM Usage</span><span class="metric-val">${memUsed} MB / ${server.memTotal} MB</span></div>
+        <div class="progress-bar" style="margin:8px 0 4px;"><div class="progress-fill" style="width:${memPct}%;background:${memPct>80?'var(--danger)':'var(--accent)'}"></div></div>
+        <div style="font-size:.7rem;color:var(--text3);margin-bottom:8px;">${memPct}% used</div>
+        <div class="metric-row"><span class="metric-key">Pool (Total/Idle/Wait)</span><span class="metric-val">${server.poolTotal}/${server.poolIdle}/${server.poolWaiting}</span></div>
+      </div>
+
+      <!-- DB info -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗄️ PostgreSQL (AWS RDS)</div></div>
+        <div class="metric-row"><span class="metric-key">Version</span><span class="metric-val" style="font-size:.7rem;">${db.version.split(',')[0]}</span></div>
+        <div class="metric-row"><span class="metric-key">Total DB Size</span><span class="metric-val">${db.size}</span></div>
+        <div class="metric-row"><span class="metric-key">Active Connections</span><span class="metric-val">${db.activeConnections}</span></div>
+        <div style="margin-top:12px;"><div class="card-subtitle" style="margin-bottom:8px;">Table Sizes</div>
+          ${db.tables.map(t => `
+            <div class="metric-row">
+              <span class="metric-key">${t.table_name}</span>
+              <span class="metric-val">${t.total_size} · ${t.row_count} rows</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+      <!-- Activity chart -->
+      <div class="card" style="grid-column:span 3;">
+        <div class="card-header"><div class="card-title">📈 Submissions — Last 14 Days</div></div>
+        <div class="bar-chart" id="activityChart"></div>
+        <div style="font-size:.7rem;color:var(--text3);margin-top:8px;text-align:right;">Total: ${db.activityLast14.reduce((a,b)=>a+parseInt(b.count),0)} entries</div>
+      </div>
+
+      <!-- Content breakdown -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📦 By Type</div></div>
+        ${db.contentBreakdown.map(r=>`
+          <div class="metric-row"><span class="metric-key">${r.content_type}</span><span class="metric-val">${r.count}</span></div>
+        `).join('') || '<p style="color:var(--text3);font-size:.8rem;">No data</p>'}
+      </div>
+
+      <!-- Dept breakdown -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏢 By Department</div></div>
+        ${db.departmentBreakdown.map(r=>`
+          <div class="metric-row"><span class="metric-key">${r.department_name}</span><span class="metric-val">${r.count}</span></div>
+        `).join('') || '<p style="color:var(--text3);font-size:.8rem;">No data</p>'}
+      </div>
+    </div>
+  `;
+
+  // Render bar chart
+  const max = Math.max(...db.activityLast14.map(r=>parseInt(r.count)), 1);
+  const chart = document.getElementById('activityChart');
+  if (chart && db.activityLast14.length) {
+    chart.innerHTML = db.activityLast14.map(r => {
+      const pct = Math.round((parseInt(r.count) / max) * 100);
+      const label = new Date(r.day).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+      return `<div class="bar-item"><div class="bar-fill" style="height:${pct}%;"></div><div class="bar-label">${label}</div></div>`;
+    }).join('');
+  } else if (chart) {
+    chart.innerHTML = `<div style="color:var(--text3);font-size:.8rem;padding:20px;">No activity in last 14 days</div>`;
+  }
+}
+
+function formatUptime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h ? `${h}h ${m}m` : `${m}m`;
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadHealth);
+loadHealth();
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# ── Secrets & Keys ───────────────────────────────────────────────
+.env
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ── Dependencies ─────────────────────────────────────────────────
+node_modules/
+
+# ── Uploads (local fallback) ──────────────────────────────────────
+uploads/
+
+# ── Logs ─────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+
+# ── OS files ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Editor files ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Internal / Private docs ───────────────────────────────────────
+SWITCH_TO_ORACLE.md

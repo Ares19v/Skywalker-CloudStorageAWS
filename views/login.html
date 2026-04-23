@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompanyDB — Login</title>
+  <meta name="description" content="InnoThoughts internal database. Sign in to access your team's data vault." />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card fade-in">
+    <div class="login-logo">
+      <div class="logo-mark">IT</div>
+      <h1>CompanyDB</h1>
+      <p>InnoThoughts Internal Vault</p>
+    </div>
+
+    <form class="login-form" id="loginForm" autocomplete="off">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input class="form-control" type="text" id="username" name="username"
+               placeholder="your.username" required autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control" type="password" id="password" name="password"
+               placeholder="••••••••" required autocomplete="current-password" />
+      </div>
+      <div id="loginError" class="form-hint" style="color:var(--danger);display:none;margin-bottom:8px;"></div>
+      <button class="btn btn-primary btn-lg" type="submit" id="loginBtn">Sign In</button>
+    </form>
+
+    <div class="login-divider">Contact your admin if you don't have an account</div>
+  </div>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Signing in…';
+
+  const res = await fetch('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: document.getElementById('username').value.trim(),
+      password: document.getElementById('password').value,
+    }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    window.location.href = '/vault';
+  } else {
+    err.textContent = data.error || 'Login failed';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+});
+</script>
+</body>
+</html>

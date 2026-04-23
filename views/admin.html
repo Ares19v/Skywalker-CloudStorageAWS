@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompanyDB — Admin Panel</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Admin Panel</h1>
+        <p>Manage team accounts, roles, and passwords</p>
+      </div>
+      <button class="btn btn-primary" id="openCreateUser">+ Create Account</button>
+    </div>
+
+    <div class="page-content">
+      <!-- Stat row -->
+      <div class="stat-grid" id="adminStats" style="margin-bottom:24px;"></div>
+
+      <!-- User Table -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="card-header" style="padding:16px 20px;">
+          <div>
+            <div class="card-title">Team Accounts</div>
+            <div class="card-subtitle" id="userCount"></div>
+          </div>
+          <div class="search-wrap" style="width:220px;">
+            <i class="search-icon">⌕</i>
+            <input class="search-input" type="text" id="userSearch" placeholder="Search users…" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Username</th><th>Role</th><th>Created</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userTable">
+              <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text3);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-backdrop" id="createModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Create Account</h2>
+      <button class="modal-close" id="createClose">✕</button>
+    </div>
+    <form id="createForm">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-control" type="text" id="newUsername" placeholder="firstname.lastname" required autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-control" type="password" id="newPassword" placeholder="Min 6 characters" required autocomplete="new-password"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-control" id="newRole">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div id="createError" style="color:var(--danger);font-size:.8rem;display:none;margin-bottom:8px;"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="createCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="createSubmitBtn">Create Account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal-backdrop" id="resetModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2>Reset Password</h2>
+        <div class="card-subtitle" id="resetUsername"></div>
+      </div>
+      <button class="modal-close" id="resetClose">✕</button>
+    </div>
+    <form id="resetForm">
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input class="form-control" type="password" id="newPwd" placeholder="Min 6 characters" required autocomplete="new-password" />
+      </div>
+      <div id="resetError" style="color:var(--danger);font-size:.8rem;display:none;margin-bottom:8px;"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="resetCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="resetSubmitBtn">Reset Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="/js/shared.js"></script>
+<script>
+let allUsers = [], currentResetId = null, selfId = null;
+
+async function loadUsers() {
+  const [meRes, usersRes] = await Promise.all([fetch('/auth/me'), fetch('/api/admin/users')]);
+  const me = await meRes.json();
+  selfId = me.userId;
+  allUsers = await usersRes.json();
+  renderStats();
+  renderUsers(allUsers);
+}
+
+function renderStats() {
+  const admins  = allUsers.filter(u => u.role === 'admin').length;
+  const members = allUsers.filter(u => u.role === 'member').length;
+  document.getElementById('adminStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Accounts</div><div class="stat-value accent">${allUsers.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Admins</div><div class="stat-value warn">${admins}</div></div>
+    <div class="stat-card"><div class="stat-label">Members</div><div class="stat-value success">${members}</div></div>
+  `;
+  document.getElementById('userCount').textContent = allUsers.length + ' accounts';
+}
+
+function renderUsers(users) {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  const filtered = q ? users.filter(u => u.username.includes(q)) : users;
+  const tbody = document.getElementById('userTable');
+  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text3);">No users found</td></tr>`; return; }
+  tbody.innerHTML = filtered.map(u => {
+    const roleBadge = u.role === 'admin'
+      ? `<span class="badge badge-yellow">👑 Admin</span>`
+      : `<span class="badge badge-neutral">Member</span>`;
+    const isSelf = u.id === selfId;
+    const date = new Date(u.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+    const toggleLabel = u.role === 'admin' ? 'Make Member' : 'Make Admin';
+    const toggleClass = u.role === 'admin' ? 'btn-warn' : 'btn-success';
+    return `<tr>
+      <td class="td-mono">#${u.id}</td>
+      <td><strong>${u.username}</strong>${isSelf ? ' <span class="badge badge-blue" style="font-size:.6rem;">You</span>' : ''}</td>
+      <td>${roleBadge}</td>
+      <td class="td-mono">${date}</td>
+      <td style="white-space:nowrap;display:flex;gap:6px;padding:10px 14px;">
+        ${!isSelf ? `<button class="btn ${toggleClass} btn-sm" onclick="toggleRole(${u.id},'${u.role === 'admin' ? 'member' : 'admin'}')">${toggleLabel}</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openReset(${u.id},'${u.username}')">Reset Pwd</button>
+        ${!isSelf ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.username}')">Delete</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function toggleRole(id, newRole) {
+  const res  = await fetch(`/api/admin/users/${id}/role`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ role: newRole }) });
+  const data = await res.json();
+  if (data.success) { showToast(`Role updated to ${newRole}`, 'success'); loadUsers(); }
+  else showToast(data.error, 'error');
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Delete account "${username}"? All their submissions will also be deleted.`)) return;
+  const res  = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.success) { showToast('Account deleted', 'success'); loadUsers(); }
+  else showToast(data.error, 'error');
+}
+
+function openReset(id, username) {
+  currentResetId = id;
+  document.getElementById('resetUsername').textContent = `Resetting password for: ${username}`;
+  document.getElementById('newPwd').value = '';
+  document.getElementById('resetError').style.display = 'none';
+  document.getElementById('resetModal').classList.add('open');
+}
+
+// Create user
+document.getElementById('openCreateUser').addEventListener('click', () => {
+  document.getElementById('createForm').reset();
+  document.getElementById('createError').style.display = 'none';
+  document.getElementById('createModal').classList.add('open');
+});
+
+['createClose','createCancelBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => document.getElementById('createModal').classList.remove('open')));
+['resetClose','resetCancelBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => document.getElementById('resetModal').classList.remove('open')));
+
+document.getElementById('createForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('createSubmitBtn');
+  const err = document.getElementById('createError');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  const res = await fetch('/auth/register', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ username: document.getElementById('newUsername').value.trim(), password: document.getElementById('newPassword').value, role: document.getElementById('newRole').value }),
+  });
+  const data = await res.json();
+  if (data.success) { showToast('Account created', 'success'); document.getElementById('createModal').classList.remove('open'); loadUsers(); }
+  else { err.textContent = data.error; err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = 'Create Account';
+});
+
+document.getElementById('resetForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('resetSubmitBtn');
+  const err = document.getElementById('resetError');
+  btn.disabled = true; btn.textContent = 'Resetting…';
+  const res = await fetch('/auth/reset-password', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ userId: currentResetId, newPassword: document.getElementById('newPwd').value }),
+  });
+  const data = await res.json();
+  if (data.success) { showToast('Password reset successfully', 'success'); document.getElementById('resetModal').classList.remove('open'); }
+  else { err.textContent = data.error; err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = 'Reset Password';
+});
+
+document.getElementById('userSearch').addEventListener('input', () => renderUsers(allUsers));
+loadUsers();
+</script>
+</body>
+</html>
