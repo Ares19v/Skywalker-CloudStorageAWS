@@ -27,6 +27,12 @@ Desktop.ini
 *.swp
 *.swo
 
-# ── Internal / Private docs ───────────────────────────────────────
+# ── Windows shortcuts ─────────────────────────────────────────────
+*.lnk
+
+# ── Internal / Private docs (keep local, not on GitHub) ───────────
 SWITCH_TO_ORACLE.md
 TEARDOWN_AND_REBUILD.md
+deploy.ps1
+LAUNCH_COMPANYDB.bat
+LAUNCH_COMPANYDB.sh

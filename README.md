@@ -1,242 +1,204 @@
-# CompanyDB
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-20.x-339933?style=for-the-badge&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/AWS_S3-Storage-FF9900?style=for-the-badge&logo=amazons3&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-ISC-blue?style=for-the-badge" />
+</p>
 
-A high-performance, minimalist internal database dashboard for teams. Built for non-technical users to securely submit, store, and browse company data — ads, links, notes, documents, images, videos, and more — through a clean dark-mode interface.
-
-Deployed on AWS (EC2 + RDS + S3). No technical knowledge required to use it.
-
----
-
-## Features
-
-- **Authentication** — Secure login with bcrypt-hashed passwords and server-side sessions
-- **Role System** — Admin and Member roles with full permission enforcement
-- **Submit Anything** — Text, links, ads, notes, code, images, videos, PDFs, PPTs, Word docs (up to 100MB)
-- **The Vault** — Searchable, sortable table of all submissions with inline preview (images, video, PDF)
-- **Admin Panel** — Create/delete accounts, promote members to admin, reset passwords
-- **Ownership Enforcement** — Users can only delete their own entries; admins can delete anything
-- **DB Health Dashboard** — Live RDS diagnostics, S3 storage meter, connection pool stats, activity charts
-- **Rate Limiting** — Brute-force protection on auth endpoints
-- **File Storage** — Files go to AWS S3, never to the server disk
+<h1 align="center">CompanyDB</h1>
+<p align="center"><strong>A production-grade, role-based cloud data vault for internal teams.</strong><br/>Upload files, store notes, and manage company data — securely, from any device, anywhere in the world.</p>
 
 ---
 
-## Tech Stack
+## 🌟 Overview
 
-| Layer | Technology |
-|---|---|
-| Backend | Node.js + Express |
-| Database | PostgreSQL (AWS RDS) |
-| File Storage | AWS S3 |
-| Process Manager | PM2 |
-| Frontend | Vanilla HTML + CSS (dark mode, no frameworks) |
-| Auth | bcryptjs + express-session + connect-pg-simple |
-| File Uploads | multer + multer-s3 + @aws-sdk/client-s3 |
+CompanyDB is a full-stack internal dashboard that allows non-technical team members to securely submit and browse company assets — images, PDFs, videos, documents, links, and notes — through a clean dark-mode interface.
+
+All files are streamed directly to **AWS S3**. All metadata, users, and sessions are persisted in **PostgreSQL**. The server runs on **AWS EC2** with **PM2** ensuring 24/7 uptime, even through crashes and reboots.
 
 ---
 
-## Architecture
+## ✨ Features
+
+| Feature | Details |
+| :--- | :--- |
+| **Role-Based Access** | Admin and Member roles with protected routes |
+| **Secure Auth** | Bcrypt-hashed passwords, session regeneration on login |
+| **File Vault** | Upload images, PDFs, videos, documents directly to S3 |
+| **Real-time Search** | Filter and search across all entries by type, department, or keyword |
+| **Admin Dashboard** | Manage users, reset passwords, promote/demote roles |
+| **Health Monitor** | Live server stats, DB metrics, S3 storage usage meter |
+| **Rate Limiting** | Brute-force protection on auth endpoints, DDoS mitigation on API |
+| **Security Headers** | Helmet.js enforcing X-Frame-Options, X-Content-Type, HSTS, etc. |
+| **Docker Support** | Full local dev environment with LocalStack S3 emulation |
+| **PM2 + systemd** | Auto-restarts on crash, persists across server reboots |
+
+---
+
+## 🏗️ Architecture
 
 ```
-Users (browser)
-      ↓
-EC2 Instance  ← Node.js/Express app (PM2)
-      ↓              ↓
-  AWS RDS          AWS S3
-(PostgreSQL)    (file uploads)
+Browser (Any Device)
+       │
+       ▼
+┌─────────────────────┐
+│  AWS EC2 (Ubuntu)   │  ← Node.js / Express (PM2)
+│   Port :3000        │
+└─────────┬───────────┘
+          │         │
+          ▼         ▼
+  ┌─────────────┐  ┌─────────────┐
+  │  AWS RDS    │  │   AWS S3    │
+  │ PostgreSQL  │  │ File Vault  │
+  │(users, meta)│  │(binary files│
+  └─────────────┘  └─────────────┘
 ```
 
 ---
 
-## Prerequisites
+## 🚀 Quick Start
 
-- [Node.js v20+](https://nodejs.org)
-- PostgreSQL database (AWS RDS recommended)
-- AWS S3 bucket
-- AWS IAM user with `AmazonS3FullAccess`
+### Prerequisites
 
----
+- [Node.js 18+](https://nodejs.org/)
+- A **PostgreSQL** database (AWS RDS or local)
+- An **AWS S3** bucket (or use Docker + LocalStack for local dev)
 
-## Local Setup
-
-### 1. Clone the repo
+### Option A: AWS Deployment (Production)
 
 ```bash
-git clone https://github.com/your-username/companydb.git
-cd companydb
-```
+# 1. Clone the repository
+git clone https://github.com/Ares19v/CloudStorageAWS.git
+cd CloudStorageAWS
 
-### 2. Install dependencies
-
-```bash
+# 2. Install dependencies
 npm install
+
+# 3. Configure environment
+cp .env.example .env
+# Edit .env with your RDS, S3, and AWS IAM credentials
+
+# 4. Initialize the database schema
+npm run db:init
+
+# 5. Create the admin account
+npm run seed:admin
+
+# 6. Start the server
+npm start
 ```
 
-### 3. Configure environment
-
-Copy the example env file and fill in your values:
+### Option B: Local Development (Docker — No AWS Account Required)
 
 ```bash
-cp .env.example .env
+# 1. Clone and configure
+git clone https://github.com/Ares19v/CloudStorageAWS.git
+cd CloudStorageAWS
+
+# 2. Start the entire stack (DB + S3 emulator + App) with one command
+npm run docker:up
+
+# App will be available at http://localhost:3000
+# Default admin credentials: username: admin | password: admin123
 ```
 
-Open `.env` and set:
+---
+
+## ⚙️ Environment Variables
+
+Copy `.env.example` to `.env` and populate:
 
 ```env
+# Database (AWS RDS / Local Postgres)
 DB_HOST=your-rds-endpoint.rds.amazonaws.com
-DB_PORT=5432
-DB_NAME=your_database_name
+DB_NAME=companydb
 DB_USER=postgres
-DB_PASSWORD=your_db_password
+DB_PASSWORD=your_password
+DB_SSL=true           # Set to "false" for local/Docker
 
+# AWS S3
 AWS_REGION=ap-south-1
-AWS_ACCESS_KEY_ID=your_iam_access_key
-AWS_SECRET_ACCESS_KEY=your_iam_secret_key
-S3_BUCKET_NAME=your-s3-bucket-name
-S3_PUBLIC_URL=https://your-bucket.s3.ap-south-1.amazonaws.com
+AWS_ACCESS_KEY_ID=YOUR_KEY
+AWS_SECRET_ACCESS_KEY=YOUR_SECRET
+S3_BUCKET_NAME=your-bucket-name
 
+# App
 PORT=3000
-SESSION_SECRET=replace_this_with_a_long_random_string
+SESSION_SECRET=a_very_long_random_secret_string
 MAX_FILE_SIZE_MB=100
-ADMIN_LOCK=false
-S3_FREE_GB=5
-```
-
-### 4. Initialize the database
-
-```bash
-npm run db:init
-```
-
-### 5. Create your admin account
-
-```bash
-npm run seed:admin
-```
-
-### 6. Start the server
-
-```bash
-node server.js
-```
-
-Visit [http://localhost:3000](http://localhost:3000)
-
----
-
-## Production Deployment (AWS EC2)
-
-### Requirements
-- Ubuntu 22.04+ EC2 instance (t3.micro or larger)
-- Security group allowing ports: 22 (SSH), 3000 (or 80/443)
-
-### Steps
-
-**1. SSH into your EC2 instance**
-```bash
-ssh -i "your-key.pem" ubuntu@<your-ec2-ip>
-```
-
-**2. Install Node.js**
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-```
-
-**3. Install PM2**
-```bash
-sudo npm install -g pm2
-```
-
-**4. Copy project files** (from your local machine)
-```bash
-scp -i "your-key.pem" -r ./companydb ubuntu@<your-ec2-ip>:~/companydb
-```
-
-**5. Install, initialize, and start**
-```bash
-cd ~/companydb
-npm install
-npm run db:init
-npm run seed:admin
-pm2 start server.js --name companydb
-pm2 save
-pm2 startup
-```
-
-App is now live at `http://<your-ec2-ip>:3000`
-
-For HTTPS setup, see [DEPLOYMENT.md](./DEPLOYMENT.md).
-
----
-
-## Pages
-
-| Route | Access | Description |
-|---|---|---|
-| `/login` | Public | Sign in |
-| `/input` | All users | Submit new entry (text or file) |
-| `/vault` | All users | Browse all submissions |
-| `/admin` | Admin only | Manage user accounts |
-| `/health` | Admin only | DB + S3 health dashboard |
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `DB_HOST` | ✅ | PostgreSQL host |
-| `DB_PORT` | ✅ | PostgreSQL port (default: 5432) |
-| `DB_NAME` | ✅ | Database name |
-| `DB_USER` | ✅ | Database username |
-| `DB_PASSWORD` | ✅ | Database password |
-| `AWS_REGION` | ✅ | AWS region (e.g. ap-south-1) |
-| `AWS_ACCESS_KEY_ID` | ✅ | IAM access key |
-| `AWS_SECRET_ACCESS_KEY` | ✅ | IAM secret key |
-| `S3_BUCKET_NAME` | ✅ | S3 bucket name |
-| `S3_PUBLIC_URL` | ✅ | Public base URL of S3 bucket |
-| `SESSION_SECRET` | ✅ | Random string for session signing |
-| `PORT` | ❌ | Server port (default: 3000) |
-| `MAX_FILE_SIZE_MB` | ❌ | Max upload size in MB (default: 100) |
-| `ADMIN_LOCK` | ❌ | Set `true` to restrict all deletes to admins |
-| `S3_FREE_GB` | ❌ | Free tier limit for storage meter (default: 5) |
-
----
-
-## Supported File Types
-
-| Category | Formats |
-|---|---|
-| Images | JPG, PNG, GIF, WebP, SVG |
-| Videos | MP4, MOV, AVI, WebM |
-| Documents | PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX |
-| Code / Text | TXT, JS, PY, JSON, CSV, HTML, CSS, XML |
-| Archives | ZIP |
-
----
-
-## Scripts
-
-```bash
-npm start          # Start server
-npm run dev        # Start with auto-reload (node --watch)
-npm run db:init    # Create database tables
-npm run seed:admin # Create/reset admin account
+ADMIN_LOCK=false      # true = only admins can delete entries
 ```
 
 ---
 
-## Security Notes
+## 📁 Project Structure
 
-- Passwords hashed with bcrypt (cost factor 12)
-- Sessions stored in PostgreSQL (not in-memory)
-- File uploads go directly to S3 — never touch the server disk
-- Rate limiting: 20 requests/15min on auth, 120 requests/min on API
-- `.env` and `*.pem` are gitignored — never commit them
-- Set `ADMIN_LOCK=true` to restrict all deletions to admins only
+```
+companydb/
+├── server.js                 # Express app entry point, middleware config
+├── package.json
+├── Dockerfile
+├── docker-compose.yml        # Full local stack (Postgres + LocalStack + App)
+│
+├── db/
+│   ├── pool.js               # PostgreSQL connection pool
+│   └── schema.sql            # Database schema (users, sessions, submissions)
+│
+├── routes/
+│   ├── auth.js               # Login, logout, register, password management
+│   ├── submissions.js        # File upload (S3) + CRUD for vault entries
+│   ├── admin.js              # User management (admin only)
+│   └── health.js             # Server & DB health metrics
+│
+├── middleware/
+│   └── auth.js               # requireLogin / requireAdmin guards
+│
+├── views/                    # Server-rendered HTML pages
+│   ├── login.html
+│   ├── vault.html            # Main content browser
+│   ├── input.html            # Upload/submission form
+│   ├── admin.html            # User management panel
+│   └── health.html           # Health & metrics dashboard
+│
+├── public/                   # Static assets (CSS, client JS)
+│   ├── css/
+│   └── js/
+│
+└── scripts/
+    ├── initDb.js             # Runs schema.sql against the database
+    ├── seedAdmin.js          # Interactive admin account creator
+    └── testS3.js             # S3 connectivity smoke test
+```
 
 ---
 
-## License
+## 🔐 Security
 
-MIT
+- **Passwords**: Hashed with `bcryptjs` (cost factor 12). Plaintext never stored.
+- **Sessions**: Server-side PostgreSQL store (`connect-pg-simple`). Regenerated on login to prevent session fixation.
+- **HTTP Headers**: `helmet.js` sets `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, and more.
+- **Rate Limiting**: Auth endpoints (login/register) are limited to 20 requests/15 minutes. All API endpoints are limited to 120 requests/minute.
+- **Authorization**: All routes are protected by session guards. Admin routes require `role === 'admin'` verified server-side.
+- **File Validation**: Only whitelisted MIME types are accepted for upload.
+
+---
+
+## 🐳 Docker Reference
+
+```bash
+# Start full local stack
+docker-compose up --build
+
+# Stop and clean up (removes volumes/data)
+docker-compose down -v
+
+# View app logs
+docker-compose logs -f app
+```
+
+---
+
+## 📜 License
+
+ISC © InnoThoughts

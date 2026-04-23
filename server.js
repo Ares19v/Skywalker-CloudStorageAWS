@@ -5,6 +5,7 @@ const express      = require('express');
 const session      = require('express-session');
 const pgSession    = require('connect-pg-simple')(session);
 const rateLimit    = require('express-rate-limit');
+const helmet       = require('helmet');
 const path         = require('path');
 const pool         = require('./db/pool');
 
@@ -14,12 +15,25 @@ const adminRoutes       = require('./routes/admin');
 const healthRoutes      = require('./routes/health');
 const { requireLogin, requireAdmin } = require('./middleware/auth');
 
+// ─── Startup: Validate required environment variables ─────────────────────────
+const REQUIRED_ENV = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'SESSION_SECRET', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'S3_BUCKET_NAME'];
+const missingEnv = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missingEnv.length > 0) {
+  console.error(`\n[FATAL] Missing required environment variables: ${missingEnv.join(', ')}`);
+  console.error('[FATAL] Copy .env.example to .env and fill in the values.\n');
+  process.exit(1);
+}
+
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ─── Security Headers (Helmet) ────────────────────────────────────────────────
+// Disables CSP for now since we serve inline scripts; can be tightened later
+app.use(helmet({ contentSecurityPolicy: false }));
+
 // ─── Body parsers ─────────────────────────────────────────────────────────────
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ─── Session store (PostgreSQL) ───────────────────────────────────────────────
 app.use(session({
@@ -110,7 +124,7 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Start server ─────────────────────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   const { networkInterfaces } = require('os');
   const nets = networkInterfaces();
   let localIP = 'localhost';
@@ -125,4 +139,14 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`║  Local:   http://localhost:${PORT}       ║`);
   console.log(`║  Network: http://${localIP}:${PORT}    ║`);
   console.log(`╚═══════════════════════════════════════╝\n`);
+});
+
+// ─── Graceful shutdown (PM2 / Docker SIGTERM) ─────────────────────────────────
+process.on('SIGTERM', () => {
+  console.log('[INFO] SIGTERM received — shutting down gracefully...');
+  server.close(async () => {
+    await pool.end();
+    console.log('[INFO] DB pool closed. Goodbye.');
+    process.exit(0);
+  });
 });
