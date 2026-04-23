@@ -124,13 +124,33 @@ contentTypeEl.addEventListener('change', () => {
   else document.getElementById('data_body').placeholder = 'Paste your content here…';
 });
 
+// Track selected file (works for both click-to-browse AND drag-and-drop)
+let selectedFile = null;
+
 // Drag & drop
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) showPreview(e.dataTransfer.files[0]); });
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) {
+    selectedFile = e.dataTransfer.files[0];
+    showPreview(selectedFile);
+  }
+});
 uploadZone.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) showPreview(fileInput.files[0]); });
-document.getElementById('fileRemove').addEventListener('click', () => { fileInput.value = ''; filePreview.style.display = 'none'; uploadZone.style.display = 'flex'; });
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) {
+    selectedFile = fileInput.files[0];
+    showPreview(selectedFile);
+  }
+});
+document.getElementById('fileRemove').addEventListener('click', () => {
+  fileInput.value = '';
+  selectedFile = null;
+  filePreview.style.display = 'none';
+  uploadZone.style.display = 'flex';
+});
 
 function showPreview(file) {
   document.getElementById('previewName').textContent = file.name;
@@ -153,7 +173,12 @@ document.getElementById('submitForm').addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Submitting…';
 
-  const fd = new FormData(document.getElementById('submitForm'));
+  // Build FormData explicitly — reliable for both click-to-browse and drag-and-drop
+  const fd = new FormData();
+  fd.append('department_name', document.getElementById('department_name').value);
+  fd.append('content_type',   document.getElementById('content_type').value);
+  fd.append('data_body',      document.getElementById('data_body').value || '');
+  if (selectedFile) fd.append('file', selectedFile);
 
   // XHR for upload progress
   const xhr = new XMLHttpRequest();
