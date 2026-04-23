@@ -13,22 +13,26 @@
 Before deleting RDS, export all your data so you can restore it later.
 
 **SSH into your EC2 first:**
+
 ```bash
 ssh -i "InnoKey.pem" ubuntu@<your-ec2-ip>
 ```
 
 **Install pg_dump (if not already installed):**
+
 ```bash
 sudo apt install postgresql-client -y
 ```
 
 **Export the database to a SQL file:**
+
 ```bash
 pg_dump "postgresql://postgres:<your-db-password>@<your-rds-endpoint>:5432/companydb" \
   --no-owner --no-acl -f ~/companydb_backup.sql
 ```
 
 **Download the backup to your laptop** (run this from your laptop's PowerShell, not EC2):
+
 ```powershell
 scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
   ubuntu@<your-ec2-ip>:~/companydb_backup.sql `
@@ -72,11 +76,13 @@ scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
 ### Step 4 — Handle S3
 
 **Option A — Keep S3 (recommended, very cheap):**
+
 - Do nothing. Files stay in S3.
 - Cost: ~₹2/GB/month. For 1GB of uploads, that's ₹2/month.
 - When you rebuild, your files are already there.
 
 **Option B — Delete S3 completely (truly free):**
+
 1. AWS Console → **S3** → `innothoughts-companydb-v2`
 2. **Empty** the bucket first (select all objects → Delete)
 3. Then **Delete** the bucket itself
@@ -103,12 +109,14 @@ scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
 > Cost: ~$0.095/GB/month for the snapshot. For <1GB of data that's under $0.10/month.
 
 **Take a final snapshot:**
+
 1. AWS Console → RDS → your database
 2. **Actions → Take snapshot**
 3. Snapshot name: `companydb-pause-YYYY-MM` → **Take snapshot**
 4. Wait ~5 minutes for status to show "Available"
 
 **Delete the RDS instance (keeping the snapshot):**
+
 1. RDS → your database → **Actions → Delete**
 2. ✅ Check "Create final snapshot" → name: `companydb-final`
 3. Uncheck "Retain automated backups"
@@ -118,6 +126,7 @@ scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
 No more 7-day auto-restart hassle.
 
 **To restore from snapshot when you come back:**
+
 1. AWS Console → RDS → **Snapshots** (left sidebar)
 2. Select your snapshot → **Actions → Restore snapshot**
 3. Settings: db.t3.micro, identifier: `innothoughts-db`, Publicly accessible: Yes
@@ -129,19 +138,18 @@ No more 7-day auto-restart hassle.
 
 ## Pause Cost Comparison
 
-| Strategy | Monthly Cost | $100 Credits Last |
-|---|---|---|
-| Keep everything running | ~$20/month | ~5 months |
-| Stop EC2, keep RDS running | ~$13/month | ~7.5 months |
-| Stop EC2 + stop RDS (7-day hassle) | ~$3.60/month | ~27 months |
-| **Stop EC2 + snapshot RDS + delete RDS** | **~$1/month** | **~8+ years** |
+| Strategy                                 | Monthly Cost  | $100 Credits Last |
+| ---------------------------------------- | ------------- | ----------------- |
+| Keep everything running                  | ~$20/month    | ~5 months         |
+| Stop EC2, keep RDS running               | ~$13/month    | ~7.5 months       |
+| Stop EC2 + stop RDS (7-day hassle)       | ~$3.60/month  | ~27 months        |
+| **Stop EC2 + snapshot RDS + delete RDS** | **~$1/month** | **~8+ years**     |
 
 **Recommended: Stop EC2 + Snapshot RDS + Delete RDS**
 
 ---
 
 ### Step 6 — Verify Zero Charges
-
 
 1. AWS Console → **Billing** → **Bills**
 2. Check current month shows $0 or only tiny S3 charges (if you kept it)
@@ -173,6 +181,7 @@ No more 7-day auto-restart hassle.
 3. Click **Create database** → wait 5–10 minutes
 
 **After it's created:**
+
 1. Go to the security group created for RDS
 2. **Inbound rules → Edit → Add rule:**
    - Type: PostgreSQL
@@ -192,6 +201,7 @@ No more 7-day auto-restart hassle.
 3. Click **Create bucket**
 
 **Set bucket policy for public file access:**
+
 1. Click your new bucket → **Permissions** → **Bucket policy** → **Edit**
 2. Paste this (replace `innothoughts-companydb-v2` with your actual bucket name):
 
@@ -208,6 +218,7 @@ No more 7-day auto-restart hassle.
   ]
 }
 ```
+
 3. Save
 
 ✅ S3 bucket ready. Files uploaded here will be publicly readable (needed to view them in the browser).
@@ -253,6 +264,7 @@ The app needs credentials to upload files to S3.
 4. Note down the **Public IPv4 address** (e.g. `13.235.xx.xx`)
 
 **Fix PEM permissions on your laptop (Windows PowerShell):**
+
 ```powershell
 icacls "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" /inheritance:r
 icacls "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" /grant:r "$($env:USERNAME):(R)"
@@ -289,11 +301,13 @@ S3_FREE_GB=5
 ### Step F — Deploy the App to EC2
 
 **Create a clean copy of the project (no node_modules or keys):**
+
 ```powershell
 robocopy "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB" "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB_deploy" /E /XD node_modules uploads /XF "*.pem" "*.log"
 ```
 
 **Upload to EC2:**
+
 ```powershell
 scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
   -r "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB_deploy" `
@@ -301,6 +315,7 @@ scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
 ```
 
 **Clean up temp folder:**
+
 ```powershell
 Remove-Item -Recurse -Force "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB_deploy"
 ```
@@ -310,11 +325,13 @@ Remove-Item -Recurse -Force "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB_d
 ### Step G — Set Up the EC2 Server
 
 **SSH in:**
+
 ```powershell
 ssh -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" ubuntu@<your-new-ec2-ip>
 ```
 
 **Run all of these on the EC2:**
+
 ```bash
 # Install Node.js 20
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -343,6 +360,7 @@ npm run db:init
 If you saved `companydb_backup.sql` during teardown, upload and restore it:
 
 **Upload from laptop to EC2:**
+
 ```powershell
 scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
   "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\companydb_backup.sql" `
@@ -350,6 +368,7 @@ scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
 ```
 
 **On EC2 — restore the data:**
+
 ```bash
 psql "postgresql://postgres:<password>@<new-rds-endpoint>:5432/companydb" \
   -f ~/companydb_backup.sql
@@ -363,6 +382,7 @@ psql "postgresql://postgres:<password>@<new-rds-endpoint>:5432/companydb" \
 ### Step I — Start the App
 
 **On EC2:**
+
 ```bash
 cd ~/companydb
 
@@ -419,11 +439,11 @@ AWS S3 (file storage)
 
 ## Cost Reference
 
-| Service | Running Cost | Stopped Cost |
-|---|---|---|
-| EC2 t3.micro | ~$8/month | ~$0.10/month (disk only) |
-| RDS db.t3.micro | ~$12/month | ~$2.30/month (storage, auto-restarts after 7 days) |
-| S3 (per GB) | ~$0.025/GB/month | Same (data just sits there) |
+| Service         | Running Cost     | Stopped Cost                                       |
+| --------------- | ---------------- | -------------------------------------------------- |
+| EC2 t3.micro    | ~$8/month        | ~$0.10/month (disk only)                           |
+| RDS db.t3.micro | ~$12/month       | ~$2.30/month (storage, auto-restarts after 7 days) |
+| S3 (per GB)     | ~$0.025/GB/month | Same (data just sits there)                        |
 
 **Total running: ~$20/month (~₹1,700)**
 **Total stopped: ~$2.40/month (~₹200) — but RDS keeps restarting every 7 days**
@@ -453,3 +473,55 @@ AWS S3 (file storage)
 - [ ] DB backup restored (or fresh `npm run seed:admin`)
 - [ ] `pm2 start` and `pm2 startup` run
 - [ ] Tested login, text submission, file upload
+
+
+---
+
+# ☁️ The 6-Month "Hibernation" Breakdown
+
+By de-provisioning the compute and retaining only the data snapshots, you are effectively operating like a DevOps lead optimizing a burn rate. Since you are utilizing the AWS 12-Month Free Tier alongside your $100 credits, your actual out-of-pocket cost for this pause will be **$0.00**.
+
+If the credits didn't exist, here is the "Lights Off" billing impact:
+
+| Service | State During Pause | Estimated Monthly Cost |
+| :--- | :--- | :--- |
+| **IAM (Security)** | Active | $0.00 (Always free) |
+| **EC2 (Server)** | Stopped | ~$0.64 (Paying only for the 8GB EBS storage) |
+| **RDS (Database)** | Snapshot Created | ~$0.10 (Storage cost for the backup image) |
+| **S3 (Storage)** | Active | $0.00 (Stays free under 5GB limit) |
+| **Total** | | **<$1.00 per month** |
+
+---
+
+## 🛠️ Proper "Pause" Protocol
+
+To ensure you don't lose a single line of data or a single PDF while you focus on your other projects, follow these steps:
+
+### 1. The RDS Snapshot (Crucial)
+1. Go to the **RDS Console > Databases**.
+2. Select your instance and click **Actions -> Delete**.
+3. **CRITICAL**: When the prompt appears, check the box for **"Create final snapshot?"**.
+4. Name it `companydb-6month-pause`. This is your "save game" file.
+
+### 2. The EC2 Stop
+1. Go to **Instances**.
+2. Select your server and click **Instance State -> Stop Instance**.
+3. **Do NOT click Terminate**, or the instance (and its OS configuration) will be deleted forever.
+
+### 3. S3 & IAM
+- Do nothing. These are passive services and will sit waiting for you without any active maintenance.
+
+---
+
+## 🔄 The Reactivation Checklist
+
+When you return to your HP Omen 16 in six months to wake up "Agent Smith" or "CompanyDB," you will need to update three specific things in your code:
+
+1.  **New EC2 IP Address**: Upon restarting, AWS will issue a new Public IP. You must update your frontend or API calls to point to this new address.
+2.  **New RDS Endpoint**: Restoring from a snapshot creates a new database instance. This generates a brand-new URL (Endpoint). You must update the `DB_HOST=` variable in your `.env` file.
+3.  **Security Group Rules**: Sometimes restored databases revert to default security. Ensure you re-enable **Port 5432 (PostgreSQL)** for `0.0.0.0/0` so your app can communicate with the data.
+
+### What stays the same?
+-   **DB Credentials**: Your password (`innodb123`) remains baked into the snapshot.
+-   **S3 Buckets**: All files and bucket names remain identical.
+-   **IAM Keys**: Your Access and Secret keys remain valid.
