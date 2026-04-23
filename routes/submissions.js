@@ -45,7 +45,7 @@ const upload = multer({
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
-    contentType: multerS3.AUTO_CONTENT_TYPE,
+    contentType: (req, file, cb) => cb(null, file.mimetype || 'application/octet-stream'),
     key: (req, file, cb) => {
       const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
       const ext    = path.extname(file.originalname);
