@@ -96,7 +96,52 @@ scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" `
 
 ---
 
+### Step 1b — RECOMMENDED: Snapshot RDS Instead of Deleting (Keep Data, Stop Charges)
+
+> This is the smart pause strategy. Instead of deleting RDS (losing data) or stopping it
+> (auto-restarts every 7 days), take a snapshot and delete the instance.
+> Cost: ~$0.095/GB/month for the snapshot. For <1GB of data that's under $0.10/month.
+
+**Take a final snapshot:**
+1. AWS Console → RDS → your database
+2. **Actions → Take snapshot**
+3. Snapshot name: `companydb-pause-YYYY-MM` → **Take snapshot**
+4. Wait ~5 minutes for status to show "Available"
+
+**Delete the RDS instance (keeping the snapshot):**
+1. RDS → your database → **Actions → Delete**
+2. ✅ Check "Create final snapshot" → name: `companydb-final`
+3. Uncheck "Retain automated backups"
+4. Type `delete me` → **Delete**
+
+✅ RDS is gone (~$12/month saved). Snapshot costs ~$0.10/month.
+No more 7-day auto-restart hassle.
+
+**To restore from snapshot when you come back:**
+1. AWS Console → RDS → **Snapshots** (left sidebar)
+2. Select your snapshot → **Actions → Restore snapshot**
+3. Settings: db.t3.micro, identifier: `innothoughts-db`, Publicly accessible: Yes
+4. Restore → wait 10 min
+5. **Update `.env`** with the new endpoint (it changes every time you restore)
+6. All your data is back exactly as you left it.
+
+---
+
+## Pause Cost Comparison
+
+| Strategy | Monthly Cost | $100 Credits Last |
+|---|---|---|
+| Keep everything running | ~$20/month | ~5 months |
+| Stop EC2, keep RDS running | ~$13/month | ~7.5 months |
+| Stop EC2 + stop RDS (7-day hassle) | ~$3.60/month | ~27 months |
+| **Stop EC2 + snapshot RDS + delete RDS** | **~$1/month** | **~8+ years** |
+
+**Recommended: Stop EC2 + Snapshot RDS + Delete RDS**
+
+---
+
 ### Step 6 — Verify Zero Charges
+
 
 1. AWS Console → **Billing** → **Bills**
 2. Check current month shows $0 or only tiny S3 charges (if you kept it)
