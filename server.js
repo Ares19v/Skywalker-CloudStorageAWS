@@ -57,7 +57,11 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use('/auth', authLimiter);
+// Strict limit on login/register only (brute force protection)
+// /auth/me and /auth/logout use the generous API limiter — they fire on every page load
+app.post('/auth/login',    authLimiter);
+app.post('/auth/register', authLimiter);
+app.use('/auth', apiLimiter);
 app.use('/api',  apiLimiter);
 
 // ─── Static files ─────────────────────────────────────────────────────────────
