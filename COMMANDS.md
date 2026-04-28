@@ -21,7 +21,7 @@ npm install
 ## ── EC2 Server (SSH in first) ────────────────────────────────────
 
 # SSH into EC2
-ssh -i "InnoKey.pem" ubuntu@<your-ec2-ip>
+ssh -i "<your-key>.pem" ubuntu@<your-ec2-ip>
 
 # Check app status
 pm2 status
@@ -46,16 +46,16 @@ pm2 list
 # Run from PowerShell on your laptop
 
 # 1. Create clean copy (no node_modules / pem files)
-robocopy "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB" "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB_deploy" /E /XD node_modules uploads /XF "*.pem" "*.log"
+robocopy "<path-to-project>" "<path-to-project>_deploy" /E /XD node_modules uploads /XF "*.pem" "*.log"
 
 # 2. Upload to EC2
-scp -i "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB\InnoKey.pem" -r "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB_deploy" ubuntu@<your-ec2-ip>:~/companydb
+scp -i "<your-key>.pem" -r "<path-to-project>_deploy" ubuntu@<your-ec2-ip>:~/companydb
 
 # 3. Clean up temp folder
-Remove-Item -Recurse -Force "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB_deploy"
+Remove-Item -Recurse -Force "<path-to-project>_deploy"
 
 # 4. SSH in and restart
-ssh -i "InnoKey.pem" ubuntu@<your-ec2-ip>
+ssh -i "<your-key>.pem" ubuntu@<your-ec2-ip>
 pm2 restart companydb
 
 

@@ -10,7 +10,7 @@
 
 ### Windows (PowerShell)
 ```powershell
-cd "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB"
+cd "<path-to-project>"
 
 # Remove all installed packages (~120MB freed)
 Remove-Item -Recurse -Force node_modules

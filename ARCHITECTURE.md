@@ -261,8 +261,8 @@ All queries are wrapped in `Promise.all()` for concurrent execution. Total healt
 ## 10. Production Deployment (EC2 + PM2)
 
 ### Server: AWS EC2 t3.micro (Ubuntu 24.04)
-- **IP**: `3.7.37.140` (public IPv4)
-- **Access**: `ssh -i InnoKey.pem ubuntu@3.7.37.140`
+- **IP**: Configured via AWS (update `deploy.ps1` with your instance's public IP)
+- **Access**: `ssh -i <your-key>.pem ubuntu@<your-ec2-ip>`
 - **App path**: `~/companydb/`
 
 ### PM2 Configuration
@@ -344,5 +344,5 @@ All configuration is via environment variables (`.env` file). See `.env.example`
 | **Search** | ILIKE (case-insensitive LIKE) | Add PostgreSQL full-text search (`tsvector`) for large datasets |
 | **Audit Log** | None | Add an `audit_log` table recording who deleted what and when |
 | **2FA** | None | Add TOTP-based two-factor for admin accounts |
-| **CI/CD** | Manual `deploy.ps1` | GitHub Actions workflow to auto-deploy on push to `main` |
+| **CI/CD** | GitHub Actions (lint + Docker build + integration smoke test) | Add auto-deploy step to EC2 on green CI |
 | **Bucket Policy** | Public read (required for file preview) | Use pre-signed URLs + private bucket for stricter security |
