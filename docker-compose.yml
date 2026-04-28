@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # ─── Database: PostgreSQL ──────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: companydb-db
+    environment:
+      POSTGRES_DB: companydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      # Automatically initialize the schema on first run
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d companydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── S3 Emulation: LocalStack ──────────────────────────────────────────────
+  localstack:
+    image: localstack/localstack:latest
+    container_name: companydb-s3
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=0
+      - DEFAULT_REGION=ap-south-1
+    volumes:
+      - "./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init-s3.sh"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  # ─── Application: Node.js ──────────────────────────────────────────────────
+  app:
+    build: .
+    container_name: companydb-app
+    depends_on:
+      db:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=companydb
+      - DB_USER=postgres
+      - DB_PASSWORD=password123
+      - DB_SSL=false
+      - SESSION_SECRET=docker_secret_key_12345
+      - AWS_REGION=ap-south-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - S3_BUCKET_NAME=innothoughts-vault
+      - S3_ENDPOINT=http://localstack:4566
+      - S3_PUBLIC_URL=http://localhost:4566/innothoughts-vault
+      - MAX_FILE_SIZE_MB=100
+      - ADMIN_LOCK=false
+      - NODE_ENV=development
+
+  # ─── Admin Seeder: Automatically creates an admin account ──────────────────
+  seed-admin:
+    build: .
+    container_name: companydb-seeder
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=companydb
+      - DB_USER=postgres
+      - DB_PASSWORD=password123
+      - DB_SSL=false
+    # Pipe the password into the interactive script
+    command: ["sh", "-c", "echo 'admin123' | node scripts/seedAdmin.js"]
+    restart: "no"
+
+volumes:
+  postgres_data:

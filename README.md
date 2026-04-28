@@ -3,7 +3,8 @@
   <img src="https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/AWS_S3-Storage-FF9900?style=for-the-badge&logo=amazons3&logoColor=white" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
-  <img src="https://img.shields.io/badge/License-ISC-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
+  <img src="https://github.com/Ares19v/CloudStorageAWS/actions/workflows/ci.yml/badge.svg" alt="CI" />
 </p>
 
 <h1 align="center">CompanyDB</h1>
@@ -197,8 +198,16 @@ docker-compose down -v
 docker-compose logs -f app
 ```
 
+### Windows Quick Launch
+
+| Script | Purpose |
+| :--- | :--- |
+| `INSTALL.bat` | First-time setup — builds containers and opens the app |
+| `Run_Project.bat` | Day-to-day launcher — starts the stack and opens the browser |
+| `UNINSTALL.bat` | Full teardown — removes containers, images, and all data |
+
 ---
 
 ## 📜 License
 
-ISC © InnoThoughts
+MIT © 2025 [Devansh Tyagi](https://github.com/Ares19v)
