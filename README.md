@@ -211,3 +211,8 @@ docker-compose logs -f app
 ## 📜 License
 
 MIT © 2025 [Devansh Tyagi](https://github.com/Ares19v)
+
+---
+<p align="center">
+  Made by Devansh Tyagi @ 2026
+</p>
