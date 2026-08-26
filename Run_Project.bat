@@ -1,10 +1,10 @@
 @echo off
-TITLE CompanyDB — Local Launcher
+TITLE Skywalker — Local Launcher
 color 0A
 
 echo.
 echo  =============================================
-echo    CompanyDB  ^|  Local Docker Stack
+echo    Skywalker  ^|  Local Docker Stack
 echo  =============================================
 echo.
 
@@ -46,7 +46,7 @@ timeout /t 6 /nobreak >nul
 
 echo.
 echo  =============================================
-echo    CompanyDB is LIVE at http://localhost:3000
+echo    Skywalker is LIVE at http://localhost:3000
 echo    Default login: admin / admin123
 echo  =============================================
 echo.

@@ -1,4 +1,4 @@
--- CompanyDB Schema
+-- Skywalker Schema
 -- Run this once via: npm run db:init
 -- ============================================================
 

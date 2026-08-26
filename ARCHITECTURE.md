@@ -1,6 +1,6 @@
-# CompanyDB — Technical Architecture & Deep Dive
+# Skywalker — Technical Architecture & Deep Dive
 
-> This document is a complete technical reference for the CompanyDB system.
+> This document is a complete technical reference for the Skywalker system.
 > It covers every layer of the stack: from how a login request is processed
 > to how a file ends up in S3 and how sessions survive a server restart.
 
@@ -27,7 +27,7 @@
 
 ## 1. System Overview
 
-CompanyDB is a **monolithic** Node.js/Express web application designed for internal team use. It follows a classic **Server-Side Rendering (SSR)** pattern where the backend serves HTML pages directly and handles all business logic.
+Skywalker is a **monolithic** Node.js/Express web application designed for internal team use. It follows a classic **Server-Side Rendering (SSR)** pattern where the backend serves HTML pages directly and handles all business logic.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -263,13 +263,13 @@ All queries are wrapped in `Promise.all()` for concurrent execution. Total healt
 ### Server: AWS EC2 t3.micro (Ubuntu 24.04)
 - **IP**: Configured via AWS (update `deploy.ps1` with your instance's public IP)
 - **Access**: `ssh -i <your-key>.pem ubuntu@<your-ec2-ip>`
-- **App path**: `~/companydb/`
+- **App path**: `~/skywalker/`
 
 ### PM2 Configuration
 ```bash
-pm2 start server.js --name companydb   # Start
-pm2 restart companydb                   # Restart
-pm2 logs companydb --lines 50           # View logs
+pm2 start server.js --name skywalker   # Start
+pm2 restart skywalker                   # Restart
+pm2 logs skywalker --lines 50           # View logs
 pm2 monit                               # Live process monitor
 pm2 startup systemd && pm2 save         # Persist across reboots
 ```
@@ -288,10 +288,10 @@ The `docker-compose.yml` spins up a complete local stack:
 
 | Container | Role |
 | :--- | :--- |
-| `companydb-db` | PostgreSQL 15. Schema auto-applied via Docker init hook |
-| `companydb-s3` | LocalStack (S3 emulator). API-compatible with real AWS SDK |
-| `companydb-app` | The Node.js app, connected to the above two |
-| `companydb-seeder` | One-shot service that creates the admin account |
+| `skywalker-db` | PostgreSQL 15. Schema auto-applied via Docker init hook |
+| `skywalker-s3` | LocalStack (S3 emulator). API-compatible with real AWS SDK |
+| `skywalker-app` | The Node.js app, connected to the above two |
+| `skywalker-seeder` | One-shot service that creates the admin account |
 
 ```bash
 npm run docker:up   # Start everything

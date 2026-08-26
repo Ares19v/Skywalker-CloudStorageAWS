@@ -2,9 +2,9 @@ services:
   # ─── Database: PostgreSQL ──────────────────────────────────────────────────
   db:
     image: postgres:15-alpine
-    container_name: companydb-db
+    container_name: skywalker-db
     environment:
-      POSTGRES_DB: companydb
+      POSTGRES_DB: skywalker
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
     ports:
@@ -14,7 +14,7 @@ services:
       - ./db/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d companydb"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d skywalker"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,7 +22,7 @@ services:
   # ─── S3 Emulation: LocalStack ──────────────────────────────────────────────
   localstack:
     image: localstack/localstack:latest
-    container_name: companydb-s3
+    container_name: skywalker-s3
     ports:
       - "4566:4566"
     environment:
@@ -36,7 +36,7 @@ services:
   # ─── Application: Node.js ──────────────────────────────────────────────────
   app:
     build: .
-    container_name: companydb-app
+    container_name: skywalker-app
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
       - PORT=3000
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_NAME=companydb
+      - DB_NAME=skywalker
       - DB_USER=postgres
       - DB_PASSWORD=password123
       - DB_SSL=false
@@ -66,14 +66,14 @@ services:
   # ─── Admin Seeder: Automatically creates an admin account ──────────────────
   seed-admin:
     build: .
-    container_name: companydb-seeder
+    container_name: skywalker-seeder
     depends_on:
       db:
         condition: service_healthy
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_NAME=companydb
+      - DB_NAME=skywalker
       - DB_USER=postgres
       - DB_PASSWORD=password123
       - DB_SSL=false

@@ -10,6 +10,9 @@ node_modules/
 
 # ── Uploads (local fallback) ──────────────────────────────────────
 uploads/
+public/uploads/
+*.sqlite
+*.sqlite-journal
 
 # ── Logs ─────────────────────────────────────────────────────────
 *.log
@@ -36,8 +39,8 @@ TEARDOWN_AND_REBUILD.md
 deploy.ps1
 
 # ── Legacy EC2 launchers (private — replaced by Run_Project.bat) ──
-LAUNCH_COMPANYDB.bat
-LAUNCH_COMPANYDB.sh
+LAUNCH_SKYWALKER.bat
+LAUNCH_SKYWALKER.sh
 
 # ── Build artifacts ────────────────────────────────────────────────
 dist/

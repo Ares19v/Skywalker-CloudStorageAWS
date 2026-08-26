@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CompanyDB — The Vault</title>
+  <title>Skywalker — The Vault</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -84,7 +84,6 @@
 
 <script src="/js/shared.js"></script>
 <script>
-const CONTENT_ICONS = { Ad:'📣', Link:'🔗', Note:'📝', Image:'🖼️', Video:'🎬', PDF:'📕', Code:'💻', Document:'📄', Presentation:'📊', Other:'📦' };
 const BADGE_CLASS   = { Ad:'badge-yellow', Link:'badge-blue', Note:'badge-neutral', Image:'badge-green', Video:'badge-green', PDF:'badge-red', Code:'badge-blue', Document:'badge-neutral', Presentation:'badge-yellow', Other:'badge-neutral' };
 
 let allRows = [], sortCol = 'id', sortDir = 'desc';
@@ -107,26 +106,25 @@ function renderTable(rows) {
   const tbody = document.getElementById('vaultBody');
   document.getElementById('rowCount').textContent = rows.length + ' entries';
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><span class="empty-icon">🗄️</span><h3>No entries found</h3><p>Try adjusting your filters or submit something new.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div style="text-align:center;padding:48px 20px;"><div style="font-size:1.1rem;font-weight:700;color:var(--text-main);margin-bottom:6px;">No entries found</div><p style="font-size:0.85rem;">Try adjusting your filters or submit something new.</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(r => {
-    const icon   = CONTENT_ICONS[r.content_type] || '📦';
     const badge  = BADGE_CLASS[r.content_type] || 'badge-neutral';
     const date   = new Date(r.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
     const preview = r.file_name
-      ? `<span style="color:var(--text3);font-size:.78rem;">📎 ${escHtml(r.file_name)}</span>`
-      : (r.data_body ? `<span class="td-truncate" style="display:block;max-width:260px;">${escHtml(r.data_body.substring(0,120))}</span>` : '<span style="color:var(--text3);">—</span>');
+      ? `<span style="color:var(--text-muted);font-size:.82rem;font-weight:500;">[File] ${escHtml(r.file_name)}</span>`
+      : (r.data_body ? `<span class="td-truncate" style="display:block;max-width:260px;color:var(--text-body);">${escHtml(r.data_body.substring(0,120))}</span>` : '<span style="color:var(--text-sub);">—</span>');
     const delBtn = r.can_delete
       ? `<button class="btn btn-danger btn-sm" onclick="deleteEntry(${r.id})">Delete</button>`
       : '';
     return `<tr>
-      <td class="td-mono">#${r.id}</td>
-      <td><strong>${escHtml(r.username)}</strong></td>
+      <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text-sub);">#${r.id}</td>
+      <td><strong style="color:var(--text-main);">${escHtml(r.username)}</strong></td>
       <td><span class="badge badge-neutral">${escHtml(r.department_name)}</span></td>
-      <td><span class="badge ${badge}">${icon} ${escHtml(r.content_type)}</span></td>
+      <td><span class="badge ${badge}">${escHtml(r.content_type)}</span></td>
       <td style="cursor:pointer;" onclick='openPreview(${JSON.stringify(r)})'>${preview}</td>
-      <td class="td-mono" style="white-space:nowrap;">${date}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text-sub);white-space:nowrap;">${date}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick='openPreview(${JSON.stringify(r)})'>View</button>
         ${delBtn}
@@ -136,29 +134,28 @@ function renderTable(rows) {
 }
 
 function openPreview(r) {
-  const icon = CONTENT_ICONS[r.content_type] || '📦';
-  document.getElementById('modalTitle').textContent = `${icon} ${r.content_type}`;
+  document.getElementById('modalTitle').textContent = `${r.content_type} Entry`;
   document.getElementById('modalMeta').textContent = `${r.username} · ${r.department_name} · ${new Date(r.created_at).toLocaleString('en-IN')}`;
   const body = document.getElementById('modalBody');
 
   if (r.file_path) {
     const mime = r.mime_type || '';
     if (mime.startsWith('image/')) {
-      body.innerHTML = `<img src="${r.file_path}" alt="${escHtml(r.file_name)}" style="max-width:100%;border-radius:8px;" />`;
+      body.innerHTML = `<img src="${r.file_path}" alt="${escHtml(r.file_name)}" style="max-width:100%;border-radius:12px;border:1px solid var(--border);" />`;
     } else if (mime.startsWith('video/')) {
-      body.innerHTML = `<video src="${r.file_path}" controls style="max-width:100%;border-radius:8px;"></video>`;
+      body.innerHTML = `<video src="${r.file_path}" controls style="max-width:100%;border-radius:12px;border:1px solid var(--border);"></video>`;
     } else if (mime === 'application/pdf') {
-      body.innerHTML = `<iframe src="${r.file_path}" style="width:100%;height:400px;border:none;border-radius:8px;"></iframe>`;
+      body.innerHTML = `<iframe src="${r.file_path}" style="width:100%;height:450px;border:1px solid var(--border);border-radius:12px;"></iframe>`;
     } else {
-      body.innerHTML = `<div style="padding:20px;text-align:center;"><div style="font-size:3rem;">📎</div><p style="margin-top:12px;"><a href="${r.file_path}" download="${escHtml(r.file_name)}" class="btn btn-primary">Download ${escHtml(r.file_name)}</a></p><p style="margin-top:8px;color:var(--text3);font-size:.78rem;">${formatBytes(r.file_size)}</p></div>`;
+      body.innerHTML = `<div style="padding:28px 20px;text-align:center;"><div style="font-size:1.1rem;font-weight:700;color:var(--text-main);margin-bottom:8px;">${escHtml(r.file_name)}</div><p style="margin-bottom:16px;color:var(--text-sub);font-size:.82rem;">${formatBytes(r.file_size)}</p><a href="${r.file_path}" download="${escHtml(r.file_name)}" class="btn btn-primary">Download File</a></div>`;
     }
   } else if (r.data_body) {
     const isCode = r.content_type === 'Code';
     body.innerHTML = isCode
-      ? `<pre style="background:var(--bg3);padding:16px;border-radius:8px;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.6;">${escHtml(r.data_body)}</pre>`
-      : `<p style="white-space:pre-wrap;color:var(--text);line-height:1.75;">${escHtml(r.data_body)}</p>`;
+      ? `<pre style="background:#18181b;color:#f4f4f5;padding:18px;border-radius:12px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.6;">${escHtml(r.data_body)}</pre>`
+      : `<p style="white-space:pre-wrap;color:var(--text-body);line-height:1.75;font-size:0.92rem;">${escHtml(r.data_body)}</p>`;
   } else {
-    body.innerHTML = `<p style="color:var(--text3);">No content.</p>`;
+    body.innerHTML = `<p style="color:var(--text-sub);">No content.</p>`;
   }
   document.getElementById('previewModal').classList.add('open');
 }

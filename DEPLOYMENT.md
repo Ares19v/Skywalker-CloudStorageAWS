@@ -1,6 +1,6 @@
-# CompanyDB — HTTPS & Remote Access Guide
+# Skywalker — HTTPS & Remote Access Guide
 
-> **Goal**: Let employees access CompanyDB from home over the internet, securely (HTTPS), for free.
+> **Goal**: Let employees access Skywalker from home over the internet, securely (HTTPS), for free.
 
 ---
 
@@ -63,7 +63,7 @@ http {
         location / { return 301 https://$host$request_uri; }
     }
 
-    # HTTPS → CompanyDB on 3000
+    # HTTPS → Skywalker on 3000
     server {
         listen 443 ssl;
         server_name innothoughts.duckdns.org;
@@ -136,8 +136,8 @@ app.set('trust proxy', 1);
 ## Step 6 — Start Everything
 
 ```powershell
-# Terminal 1: Start CompanyDB
-cd "C:\Users\Devansh Tyagi\Desktop\Projects\CompanyDB"
+# Terminal 1: Start Skywalker
+cd "C:\Users\Devansh Tyagi\Desktop\Projects\Skywalker"
 node server.js
 
 # Start Nginx (if not running)

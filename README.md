@@ -7,14 +7,14 @@
   <img src="https://github.com/Ares19v/CloudStorageAWS/actions/workflows/ci.yml/badge.svg" alt="CI" />
 </p>
 
-<h1 align="center">CompanyDB</h1>
+<h1 align="center">Skywalker</h1>
 <p align="center"><strong>A production-grade, role-based cloud data vault for internal teams.</strong><br/>Upload files, store notes, and manage company data — securely, from any device, anywhere in the world.</p>
 
 ---
 
 ## 🌟 Overview
 
-CompanyDB is a full-stack internal dashboard that allows non-technical team members to securely submit and browse company assets — images, PDFs, videos, documents, links, and notes — through a clean dark-mode interface.
+Skywalker is a full-stack internal dashboard that allows non-technical team members to securely submit and browse company assets — images, PDFs, videos, documents, links, and notes — through a clean dark-mode interface.
 
 All files are streamed directly to **AWS S3**. All metadata, users, and sessions are persisted in **PostgreSQL**. The server runs on **AWS EC2** with **PM2** ensuring 24/7 uptime, even through crashes and reboots.
 
@@ -113,7 +113,7 @@ Copy `.env.example` to `.env` and populate:
 ```env
 # Database (AWS RDS / Local Postgres)
 DB_HOST=your-rds-endpoint.rds.amazonaws.com
-DB_NAME=companydb
+DB_NAME=skywalker
 DB_USER=postgres
 DB_PASSWORD=your_password
 DB_SSL=true           # Set to "false" for local/Docker
@@ -136,7 +136,7 @@ ADMIN_LOCK=false      # true = only admins can delete entries
 ## 📁 Project Structure
 
 ```
-companydb/
+skywalker/
 ├── server.js                 # Express app entry point, middleware config
 ├── package.json
 ├── Dockerfile

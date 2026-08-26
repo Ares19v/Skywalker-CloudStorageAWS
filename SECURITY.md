@@ -10,7 +10,7 @@
 
 **Please do not open a public GitHub issue for security vulnerabilities.**
 
-If you discover a security vulnerability in CompanyDB, please report it responsibly by emailing:
+If you discover a security vulnerability in Skywalker, please report it responsibly by emailing:
 
 📧 **[your-email@example.com]**
 
@@ -24,7 +24,7 @@ You can expect an acknowledgement within **48 hours** and a resolution timeline 
 
 ## Security Design
 
-CompanyDB is designed with the following security measures:
+Skywalker is designed with the following security measures:
 
 - **Passwords** hashed with `bcryptjs` (cost factor 12) — plaintext never stored
 - **Sessions** stored server-side in PostgreSQL (`connect-pg-simple`) with `httpOnly` cookies
@@ -37,6 +37,6 @@ CompanyDB is designed with the following security measures:
 
 ## Scope
 
-This policy applies to the CompanyDB source code in this repository.
+This policy applies to the Skywalker source code in this repository.
 AWS credentials, EC2 access keys, and RDS credentials are **out of scope** —
 they are never committed to this repository.

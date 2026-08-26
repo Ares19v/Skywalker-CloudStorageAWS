@@ -1,10 +1,10 @@
 @echo off
-TITLE CompanyDB — Install
+TITLE Skywalker — Install
 color 0A
 
 echo.
 echo  =============================================
-echo    CompanyDB  ^|  First-Time Setup
+echo    Skywalker  ^|  First-Time Setup
 echo  =============================================
 echo.
 
@@ -59,7 +59,7 @@ timeout /t 8 /nobreak >nul
 echo.
 echo  =============================================
 echo    Installation complete!
-echo    CompanyDB is running at http://localhost:3000
+echo    Skywalker is running at http://localhost:3000
 echo    Default login: admin / admin123
 echo  =============================================
 echo.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CompanyDB — Admin Panel</title>
+  <title>Skywalker — Admin Panel</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -126,9 +126,11 @@ function renderStats() {
   const admins  = allUsers.filter(u => u.role === 'admin').length;
   const members = allUsers.filter(u => u.role === 'member').length;
   document.getElementById('adminStats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Accounts</div><div class="stat-value accent">${allUsers.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Admins</div><div class="stat-value warn">${admins}</div></div>
-    <div class="stat-card"><div class="stat-label">Members</div><div class="stat-value success">${members}</div></div>
+    <div class="metrics-grid" style="margin-bottom:0;">
+      <div class="metric-card"><div class="metric-label">Total Accounts</div><div class="metric-value">${allUsers.length}</div><div class="metric-sub">Registered users</div></div>
+      <div class="metric-card"><div class="metric-label">Administrators</div><div class="metric-value">${admins}</div><div class="metric-sub">Full access</div></div>
+      <div class="metric-card"><div class="metric-label">Standard Members</div><div class="metric-value">${members}</div><div class="metric-sub">Vault contributors</div></div>
+    </div>
   `;
   document.getElementById('userCount').textContent = allUsers.length + ' accounts';
 }
@@ -137,22 +139,21 @@ function renderUsers(users) {
   const q = document.getElementById('userSearch').value.toLowerCase();
   const filtered = q ? users.filter(u => u.username.includes(q)) : users;
   const tbody = document.getElementById('userTable');
-  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text3);">No users found</td></tr>`; return; }
+  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-sub);">No users found</td></tr>`; return; }
   tbody.innerHTML = filtered.map(u => {
     const roleBadge = u.role === 'admin'
-      ? `<span class="badge badge-yellow">👑 Admin</span>`
+      ? `<span class="badge badge-yellow">Admin</span>`
       : `<span class="badge badge-neutral">Member</span>`;
     const isSelf = u.id === selfId;
     const date = new Date(u.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-    const toggleLabel = u.role === 'admin' ? 'Make Member' : 'Make Admin';
-    const toggleClass = u.role === 'admin' ? 'btn-warn' : 'btn-success';
+    const toggleLabel = u.role === 'admin' ? 'Set Member' : 'Set Admin';
     return `<tr>
-      <td class="td-mono">#${u.id}</td>
-      <td><strong>${u.username}</strong>${isSelf ? ' <span class="badge badge-blue" style="font-size:.6rem;">You</span>' : ''}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text-sub);">#${u.id}</td>
+      <td><strong style="color:var(--text-main);">${u.username}</strong>${isSelf ? ' <span class="badge badge-blue" style="font-size:.65rem;margin-left:4px;">You</span>' : ''}</td>
       <td>${roleBadge}</td>
-      <td class="td-mono">${date}</td>
-      <td style="white-space:nowrap;display:flex;gap:6px;padding:10px 14px;">
-        ${!isSelf ? `<button class="btn ${toggleClass} btn-sm" onclick="toggleRole(${u.id},'${u.role === 'admin' ? 'member' : 'admin'}')">${toggleLabel}</button>` : ''}
+      <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text-sub);white-space:nowrap;">${date}</td>
+      <td style="white-space:nowrap;display:flex;gap:6px;padding:12px 18px;">
+        ${!isSelf ? `<button class="btn btn-ghost btn-sm" onclick="toggleRole(${u.id},'${u.role === 'admin' ? 'member' : 'admin'}')">${toggleLabel}</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="openReset(${u.id},'${u.username}')">Reset Pwd</button>
         ${!isSelf ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.username}')">Delete</button>` : ''}
       </td>

@@ -20,7 +20,7 @@ yarn-error.log*
 uploads/
 
 # ── Local dev artifacts ───────────────────────────────────────────────────────
-companydb_backup.sql
+skywalker_backup.sql
 *.bak
 
 # ── Editor / OS noise ─────────────────────────────────────────────────────────

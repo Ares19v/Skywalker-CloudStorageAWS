@@ -1,4 +1,4 @@
-# CompanyDB — Space Management & Dependency Cleanup
+# Skywalker — Space Management & Dependency Cleanup
 
 > Use this file when you need to free up disk space.
 > These commands remove all installed dependencies while keeping your source code intact.
@@ -18,7 +18,7 @@ Remove-Item -Recurse -Force node_modules
 
 ### macOS / Linux (Terminal)
 ```bash
-cd ~/Desktop/Projects/CompanyDB
+cd ~/Desktop/Projects/Skywalker
 rm -rf node_modules
 ```
 
@@ -62,7 +62,7 @@ npm start
 npm run docker:down
 
 # Remove built images
-docker rmi companydb-app companydb-seeder
+docker rmi skywalker-app skywalker-seeder
 
 # Nuclear: wipe all unused Docker objects
 docker system prune -a --volumes

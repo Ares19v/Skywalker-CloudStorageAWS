@@ -46,7 +46,7 @@ jobs:
         with:
           context: .
           push: false
-          tags: companydb:ci
+          tags: skywalker:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -60,13 +60,13 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_DB: companydb
+          POSTGRES_DB: skywalker
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password123
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d companydb"
+          --health-cmd "pg_isready -U postgres -d skywalker"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -95,7 +95,7 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_NAME: companydb
+          DB_NAME: skywalker
           DB_USER: postgres
           DB_PASSWORD: password123
           DB_SSL: "false"
@@ -105,7 +105,7 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_NAME: companydb
+          DB_NAME: skywalker
           DB_USER: postgres
           DB_PASSWORD: password123
           DB_SSL: "false"
@@ -116,7 +116,7 @@ jobs:
           PORT: 3000
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_NAME: companydb
+          DB_NAME: skywalker
           DB_USER: postgres
           DB_PASSWORD: password123
           DB_SSL: "false"
@@ -124,7 +124,7 @@ jobs:
           AWS_REGION: ap-south-1
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
-          S3_BUCKET_NAME: companydb-ci-bucket
+          S3_BUCKET_NAME: skywalker-ci-bucket
           S3_ENDPOINT: ""
           MAX_FILE_SIZE_MB: "100"
           ADMIN_LOCK: "false"

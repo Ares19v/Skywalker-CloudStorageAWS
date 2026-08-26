@@ -1,4 +1,4 @@
-# CompanyDB — Quick Command Reference
+# Skywalker — Quick Command Reference
 
 ## ── Local Development (on your laptop) ──────────────────────────
 
@@ -27,16 +27,16 @@ ssh -i "<your-key>.pem" ubuntu@<your-ec2-ip>
 pm2 status
 
 # View live logs (Ctrl+C to exit)
-pm2 logs companydb
+pm2 logs skywalker
 
 # Restart app (after deploying new code)
-pm2 restart companydb
+pm2 restart skywalker
 
 # Stop app
-pm2 stop companydb
+pm2 stop skywalker
 
 # Start app (if stopped)
-pm2 start companydb
+pm2 start skywalker
 
 # View all PM2 processes
 pm2 list
@@ -49,14 +49,14 @@ pm2 list
 robocopy "<path-to-project>" "<path-to-project>_deploy" /E /XD node_modules uploads /XF "*.pem" "*.log"
 
 # 2. Upload to EC2
-scp -i "<your-key>.pem" -r "<path-to-project>_deploy" ubuntu@<your-ec2-ip>:~/companydb
+scp -i "<your-key>.pem" -r "<path-to-project>_deploy" ubuntu@<your-ec2-ip>:~/skywalker
 
 # 3. Clean up temp folder
 Remove-Item -Recurse -Force "<path-to-project>_deploy"
 
 # 4. SSH in and restart
 ssh -i "<your-key>.pem" ubuntu@<your-ec2-ip>
-pm2 restart companydb
+pm2 restart skywalker
 
 
 ## ── Database ─────────────────────────────────────────────────────

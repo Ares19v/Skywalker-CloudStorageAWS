@@ -1,10 +1,10 @@
 @echo off
-TITLE CompanyDB — Uninstall
+TITLE Skywalker — Uninstall
 color 0C
 
 echo.
 echo  =============================================
-echo    CompanyDB  ^|  Uninstall / Teardown
+echo    Skywalker  ^|  Uninstall / Teardown
 echo  =============================================
 echo.
 echo  WARNING: This will stop and remove all containers,
@@ -23,7 +23,7 @@ if /i NOT "%CONFIRM%"=="YES" (
 cd /d "%~dp0"
 
 echo.
-echo  [1/3] Stopping all CompanyDB containers...
+echo  [1/3] Stopping all Skywalker containers...
 docker-compose down
 
 echo.
@@ -32,12 +32,12 @@ docker-compose down -v
 
 echo.
 echo  [3/3] Removing built Docker images...
-docker rmi companydb-app 2>nul || echo      (image not found — already clean)
+docker rmi skywalker-app 2>nul || echo      (image not found — already clean)
 docker image prune -f >nul 2>&1
 
 echo.
 echo  =============================================
-echo    CompanyDB has been fully removed.
+echo    Skywalker has been fully removed.
 echo    Run INSTALL.bat to set it up again.
 echo  =============================================
 echo.

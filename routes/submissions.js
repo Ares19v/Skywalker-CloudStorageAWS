@@ -1,30 +1,16 @@
-// routes/submissions.js — CRUD for data entries (text + S3 file uploads)
+﻿// routes/submissions.js — CRUD for data entries (text + S3/Local file uploads)
 
 const express    = require('express');
 const multer     = require('multer');
 const multerS3   = require('multer-s3');
-const { S3Client, DeleteObjectCommand, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const path       = require('path');
+const fs         = require('fs');
 const pool       = require('../db/pool');
 const { requireLogin } = require('../middleware/auth');
 
-// ─── ADMIN LOCK ────────────────────────────────────────────────────────────────
-// Set ADMIN_LOCK=true in .env to restrict ALL deletions to admins only
 const ADMIN_LOCK = process.env.ADMIN_LOCK === 'true';
-// ───────────────────────────────────────────────────────────────────────────────
-
 const router = express.Router();
-
-// ─── S3 Client ────────────────────────────────────────────────────────────────
-const s3 = new S3Client({
-  region: process.env.AWS_REGION || 'ap-south-1',
-  // If S3_ENDPOINT is set (for Cloudflare R2 migration), use it
-  ...(process.env.S3_ENDPOINT ? { endpoint: process.env.S3_ENDPOINT } : {}),
-  credentials: {
-    accessKeyId:     process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
 
 const ALLOWED_MIME = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
@@ -41,8 +27,27 @@ const ALLOWED_MIME = [
   'application/zip', 'application/x-zip-compressed',
 ];
 
-const upload = multer({
-  storage: multerS3({
+const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Check if AWS S3 credentials are configured
+const useS3 = process.env.USE_S3 === 'true' && process.env.S3_BUCKET_NAME;
+let s3 = null;
+let storage;
+
+if (useS3) {
+  s3 = new S3Client({
+    region: process.env.AWS_REGION || 'ap-south-1',
+    ...(process.env.S3_ENDPOINT ? { endpoint: process.env.S3_ENDPOINT } : {}),
+    credentials: {
+      accessKeyId:     process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+
+  storage = multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
     contentType: (req, file, cb) => cb(null, file.mimetype || 'application/octet-stream'),
@@ -51,20 +56,26 @@ const upload = multer({
       const ext    = path.extname(file.originalname);
       cb(null, `uploads/${unique}${ext}`);
     },
-  }),
+  });
+} else {
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadsDir),
+    filename: (req, file, cb) => {
+      const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+      const ext    = path.extname(file.originalname);
+      cb(null, `${unique}${ext}`);
+    }
+  });
+}
+
+const upload = multer({
+  storage,
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE_MB || '100') * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (ALLOWED_MIME.includes(file.mimetype)) return cb(null, true);
     cb(new Error(`File type not allowed: ${file.mimetype}`));
   },
 });
-
-// ─── Helper: build public URL for a given S3 key ────────────────────────────
-function buildFileUrl(key) {
-  const base = (process.env.S3_PUBLIC_URL || '').replace(/\/$/, '');
-  return `${base}/${key}`;
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 // GET /api/submissions
 router.get('/', requireLogin, async (req, res) => {
@@ -114,8 +125,7 @@ router.post('/', requireLogin, upload.single('file'), async (req, res) => {
     return res.status(400).json({ error: 'Either text content or a file is required' });
   }
 
-  // S3 gives us the full location on req.file.location
-  const filePath = req.file ? req.file.location : null;
+  const filePath = req.file ? (req.file.location || (`/uploads/${req.file.filename}`)) : null;
   const fileName = req.file ? req.file.originalname : null;
   const fileSize = req.file ? req.file.size : null;
   const mimeType = req.file ? req.file.mimetype : null;
@@ -129,8 +139,7 @@ router.post('/', requireLogin, upload.single('file'), async (req, res) => {
     );
     res.json({ success: true, submission: result.rows[0] });
   } catch (err) {
-    // If DB insert fails and file was uploaded to S3, clean it up
-    if (req.file && req.file.key) {
+    if (useS3 && s3 && req.file && req.file.key) {
       await s3.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET_NAME, Key: req.file.key })).catch(() => {});
     }
     console.error('[submissions/POST]', err.message);
@@ -141,38 +150,37 @@ router.post('/', requireLogin, upload.single('file'), async (req, res) => {
 // DELETE /api/submissions/:id
 router.delete('/:id', requireLogin, async (req, res) => {
   const { id } = req.params;
+  const sessionUserId = req.session.userId;
+  const isAdmin       = req.session.role === 'admin';
+
   try {
-    const result = await pool.query('SELECT user_id, file_path FROM submissions WHERE id = $1', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Entry not found' });
+    const check = await pool.query('SELECT user_id, file_path FROM submissions WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+    const entry = check.rows[0];
 
-    const sub     = result.rows[0];
-    const isOwner = sub.user_id === req.session.userId;
-    const isAdmin = req.session.role === 'admin';
-
-    if (ADMIN_LOCK && !isAdmin) return res.status(403).json({ error: 'Deletions are restricted to admins' });
-    if (!isAdmin && !isOwner)   return res.status(403).json({ error: 'You can only delete your own entries' });
+    if (ADMIN_LOCK && !isAdmin) {
+      return res.status(403).json({ error: 'Deletion locked by administrator' });
+    }
+    if (!isAdmin && entry.user_id !== sessionUserId) {
+      return res.status(403).json({ error: 'Forbidden: you can only delete your own entries' });
+    }
 
     await pool.query('DELETE FROM submissions WHERE id = $1', [id]);
 
-    // Delete from S3 if a file exists
-    if (sub.file_path) {
-      try {
-        // Extract the S3 key from the full URL
-        const url  = new URL(sub.file_path);
-        const key  = url.pathname.replace(/^\//, '');
-        await s3.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET_NAME, Key: key }));
-      } catch (s3Err) {
-        console.warn('[submissions/DELETE] S3 cleanup failed:', s3Err.message);
-        // Don't fail the request — DB record is already deleted
+    if (entry.file_path && entry.file_path.startsWith('/uploads/')) {
+      const localFile = path.join(__dirname, '..', 'public', entry.file_path);
+      if (fs.existsSync(localFile)) {
+        fs.unlinkSync(localFile);
       }
     }
-    res.json({ success: true });
+
+    res.json({ success: true, message: 'Deleted successfully' });
   } catch (err) {
     console.error('[submissions/DELETE]', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Export S3 client for use in health route
 module.exports = router;
-module.exports.s3 = s3;
