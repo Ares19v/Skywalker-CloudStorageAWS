@@ -4,11 +4,11 @@
   <img src="https://img.shields.io/badge/AWS_S3-Storage-FF9900?style=for-the-badge&logo=amazons3&logoColor=white" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
-  <img src="https://github.com/Ares19v/CloudStorageAWS/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  <img src="https://github.com/Ares19v/Skywalker-CloudStorageAWS/actions/workflows/ci.yml/badge.svg" alt="CI" />
 </p>
 
 <h1 align="center">Skywalker</h1>
-<p align="center"><strong>A production-grade, role-based cloud data vault for internal teams.</strong><br/>Upload files, store notes, and manage company data — securely, from any device, anywhere in the world.</p>
+<p align="center"><strong>A high-performance, role-based cloud data vault for internal teams.</strong><br/>Upload files, store notes, and manage company data — securely, from any device, anywhere in the world.</p>
 
 ---
 
@@ -70,7 +70,7 @@ Browser (Any Device)
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Ares19v/CloudStorageAWS.git
+git clone https://github.com/Ares19v/Skywalker-CloudStorageAWS.git
 cd CloudStorageAWS
 
 # 2. Install dependencies
@@ -94,7 +94,7 @@ npm start
 
 ```bash
 # 1. Clone and configure
-git clone https://github.com/Ares19v/CloudStorageAWS.git
+git clone https://github.com/Ares19v/Skywalker-CloudStorageAWS.git
 cd CloudStorageAWS
 
 # 2. Start the entire stack (DB + S3 emulator + App) with one command

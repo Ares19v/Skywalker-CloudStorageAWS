@@ -1,7 +1,7 @@
 {
   "name": "skywalker",
   "version": "1.0.0",
-  "description": "Skywalker Internal Database Dashboard — A production-grade, role-based cloud data vault built with Node.js, PostgreSQL, and AWS S3.",
+  "description": "Role-based cloud storage service and vault dashboard with Node.js, PostgreSQL, and AWS S3 integration.",
   "main": "server.js",
   "engines": {
     "node": ">=18.0.0",
